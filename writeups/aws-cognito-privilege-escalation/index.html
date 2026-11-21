@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Super Admin privilege escalation from a misconfigured AWS Cognito · Zia</title>
+  <meta name="description" content="Rewriting one custom user attribute with awscli was enough to become any user, including the Super Admin.">
+  <meta name="theme-color" content="#f7f3ec">
+  <link rel="canonical" href="https://szyth.github.io/writeups/aws-cognito-privilege-escalation/">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Super Admin privilege escalation from a misconfigured AWS Cognito">
+  <meta property="og:description" content="Rewriting one custom user attribute with awscli was enough to become any user, including the Super Admin.">
+  <meta property="og:url" content="https://szyth.github.io/writeups/aws-cognito-privilege-escalation/">
+  <meta property="article:published_time" content="2022-05-12">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<main class="page">
+  <nav class="topbar" aria-label="Site">
+    <a href="/">← Zia · Rust engineer</a>
+    <a href="/#work">All writeups</a>
+  </nav>
+  <article class="card article">
+    <header>
+      <span class="kind writeup">Writeup · from my security research days</span>
+      <h1>Super Admin privilege escalation from a misconfigured AWS Cognito</h1>
+      <div class="meta"><time datetime="2022-05-12">May 12, 2022</time><span>3 min read</span><span>#pentest</span><span>#aws</span><span>#privesc</span></div>
+    </header>
+    <div class="prose">
+<p class="note">The scope of work and its details are redacted under the rules of engagement.</p>
+
+<h2>Introduction</h2>
+<p>The web application was an exam portal where faculty can create and schedule online exams, then invite and assign tests to students. Students log in and take their exams.</p>
+<p>The portal <strong>did not</strong> let users update any of their own details. Any change had to be requested from the admins.</p>
+
+<h2>AWS Cognito</h2>
+<p>I intercepted the login request and noticed the unusual headers <code>X-Amz-Cf-Pop</code> and <code>X-Amz-Cf-Id</code>. A quick search showed that AWS Cognito was handling authentication.</p>
+<p>Some background on how AWS Cognito works:</p>
+<ol>
+  <li>To log in to the application, Cognito's login page is presented.</li>
+  <li>On login, the credentials are checked against the user pool.</li>
+  <li>If they're valid, the server returns JWTs, which are then used to talk to the application.</li>
+</ol>
+<pre><code>HTTP/2 200 OK
+[...]
+{
+  "AuthenticationResult": {
+    "AccessToken": "[REDACTED]",
+    "ExpiresIn": 3600,
+    "IdToken": "[REDACTED]",
+    "RefreshToken": "[REDACTED]",
+    "TokenType": "Bearer"
+  },
+  "ChallengeParameters": {}
+}</code></pre>
+<p>So the login flow in the app I was testing was:</p>
+<ul>
+  <li>Log in to the app, which sends a POST request to Amazon Cognito.</li>
+  <li>If the credentials are valid, Cognito returns the tokens.</li>
+</ul>
+
+<h2>Exploitation</h2>
+<p>Having worked with AWS before, I knew this token could be used with <code>awscli</code>. That let me fetch my user's information from the user pool:</p>
+<pre><code>aws --no-verify-ssl cognito-idp get-user \
+  --region &lt;[redacted]&gt; --access-token &lt;[redacted]&gt;
+
+...
+  "Username": "[redacted]",
+  "UserAttributes": [
+    { "Name": "sub",            "Value": "[redacted]" },
+    { "Name": "email_verified", "Value": "true" },
+    { "Name": "name",           "Value": "[redacted]" },
+    { "Name": "email",          "Value": "[redacted]" },
+    { "Name": "custom:userid",  "Value": "[redacted]" }
+  ]
+}</code></pre>
+<p>User attributes can be changed with <code>update-user-attributes</code>. Changing the email and name fields didn't work. Then <code>custom:userid</code> caught my eye, and changing it did.</p>
+<p class="kaomoji">@_@</p>
+<p>I logged in as a different user, took their <code>custom:userid</code>, and set it on my own user. The update went through, and when I logged in again I had all of that user's privileges.</p>
+<p class="kaomoji">*_*</p>
+<p>The last piece was the Super Admin's <code>userid</code>. I got it from the <a href="/writeups/unauthenticated-api-data-leak/">unauthenticated API data leak</a> I found in the same engagement.</p>
+<p>After setting the Super Admin's <code>userid</code> on my user, my privileges were escalated to Super Admin.</p>
+<p class="kaomoji">\ (•◡•) /</p>
+
+<h2>Threat and impact</h2>
+<p>It was a three-day, time-boxed engagement, so I wrapped up at the privilege escalation and didn't push it further toward remote code execution from the admin panel.</p>
+<p>Even so, it could be chained with social engineering to trick faculty, students and other users. The possibilities are endless once you're a <em>Super Admin</em>.</p>
+
+<h2>Mitigation</h2>
+<ul>
+  <li>Remove sensitive details from server responses, including the Cognito Identity Pool ID. Servers should return the minimum data needed.</li>
+  <li>Create an AWS policy that stops regular users from writing or updating specific user attributes.</li>
+  <li>AWS docs: <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/security_iam_id-based-policy-examples.html">Identity-based policy examples for Amazon Cognito</a>.</li>
+</ul>
+    </div>
+    <nav class="end" aria-label="More">
+      <a href="/">← Back to all work</a>
+      <a href="/writeups/unauthenticated-api-data-leak/">Next: An unauthenticated API leaking every user on the platform →</a>
+    </nav>
+  </article>
+  <footer>© 2026 Zia</footer>
+</main>
+</body>
+</html>

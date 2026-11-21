@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How I found 33,000+ users' data and government documents leaking · Zia</title>
+  <meta name="description" content="An IDOR in a hidden API, a Rust PoC to prove it, and a response swap that exposed government ID documents.">
+  <meta name="theme-color" content="#f7f3ec">
+  <link rel="canonical" href="https://szyth.github.io/writeups/33000-users-data-leak/">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="How I found 33,000+ users' data and government documents leaking">
+  <meta property="og:description" content="An IDOR in a hidden API, a Rust PoC to prove it, and a response swap that exposed government ID documents.">
+  <meta property="og:url" content="https://szyth.github.io/writeups/33000-users-data-leak/">
+  <meta property="article:published_time" content="2023-02-26">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<main class="page">
+  <nav class="topbar" aria-label="Site">
+    <a href="/">← Zia · Rust engineer</a>
+    <a href="/#work">All writeups</a>
+  </nav>
+  <article class="card article">
+    <header>
+      <span class="kind writeup">Writeup · from my security research days</span>
+      <h1>How I found 33,000+ users' data and government documents leaking</h1>
+      <div class="meta"><time datetime="2023-02-26">Feb 26, 2023</time><span>3 min read</span><span>#pentest</span><span>#api</span><span>#idor</span></div>
+    </header>
+    <div class="prose">
+<p class="note">All client-specific details (website, APIs, server URLs) have been changed to respect the NDA.</p>
+
+<h2>Summary of findings</h2>
+<ul>
+  <li>Used a Google dork to find the target's subdomains.</li>
+  <li>Found <code>student.example.com</code> and registered a user there.</li>
+  <li>Intercepting the login API calls revealed the API server (<code>api-server.com</code>).</li>
+  <li>The server's page returned nothing except <code>© 2023 - My ASP.NET Web Secure API</code>.</li>
+  <li>A quick directory fuzz found a <code>/help</code> directory: an API documentation page.</li>
+  <li>The <code>POST getUserDetails()</code> API caught my eye, so I opened its details page.</li>
+  <li>The details page was completely blank. The server did respond with <code>text/html</code>, but nothing showed in the browser.</li>
+  <li>Inspecting the page, I found a global CSS rule set to <code>display: none</code> that hid all the content.</li>
+  <li>Overriding it with <code>display: block</code> revealed the page: the API documentation for <code>getUserDetails()</code>.</li>
+  <li>The request body took a <code>user-id</code> integer and an <code>Authorization: Bearer</code> header.</li>
+  <li>I took the login token from the <code>student.example.com</code> account I had registered and sent this request:</li>
+</ul>
+<pre><code>curl -i -X POST 'https://api-server.com/getUserDetails' \
+  -H 'Authorization: Bearer &lt;Token&gt;' \
+  -H 'Content-Type: application/json' \
+  -d '{"user-id":"&lt;myuserid&gt;"}'</code></pre>
+<ul>
+  <li>The server returned my user details.</li>
+  <li>Changing the <code>user-id</code> integer returned that user's data too. IDOR, screaming in the background.</li>
+  <li>To show how sensitive the data was, I wrote a multi-threaded <a href="https://github.com/szyth/idoar">IDOR exploitation PoC in Rust</a> to dump it.</li>
+  <li>In total there were <strong>33,000+ users</strong>.</li>
+  <li>The data included name, date of birth, email, phone number, address, guardian details and government document filenames, to name a few.</li>
+</ul>
+
+<h2>Digging deeper to find the government documents</h2>
+<ul>
+  <li>The PII dump only had the documents' filenames, not their path on the server.</li>
+  <li>The next step was finding the directory the server used to serve these files to users after login.</li>
+  <li>Logging back in to <code>student.example.com</code>, I was asked to pay Rs 1000 for registration before I could reach the user profile, where the documents were embedded.</li>
+  <li>Back in the PII dump, I found a user who had already paid.</li>
+  <li>I sent their user ID with a dummy password and proxied the request through Burp Suite.</li>
+  <li>The login failed as expected, but I replaced the proxied response with a success response (copied from my own login).</li>
+  <li>Bingo: the browser logged me in as that user.</li>
+  <li>Their profile showed the government documents and the directory path used to serve them.</li>
+  <li>With that path, a recursive <code>wget</code> over the filenames from the dump could download every document.</li>
+</ul>
+
+<h2>Bonus finding</h2>
+<ul>
+  <li>The API documentation also listed an <code>updateUserDetails()</code> API.</li>
+  <li>It accepted any valid authorization token together with any <code>user-id</code>.</li>
+  <li>That let me change other users' details in a flick.</li>
+</ul>
+
+<p class="note">Update: these reported findings are now fixed.</p>
+    </div>
+    <nav class="end" aria-label="More">
+      <a href="/">← Back to all work</a>
+      <a href="/writeups/github-recon-api-access/">Next: How GitHub recon got me authenticated API access →</a>
+    </nav>
+  </article>
+  <footer>© 2026 Zia</footer>
+</main>
+</body>
+</html>

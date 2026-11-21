@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How GitHub recon got me authenticated API access · Zia</title>
+  <meta name="description" content="Forgotten public Angular repos with a hardcoded dev token that still worked two years later.">
+  <meta name="theme-color" content="#f7f3ec">
+  <link rel="canonical" href="https://szyth.github.io/writeups/github-recon-api-access/">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="How GitHub recon got me authenticated API access">
+  <meta property="og:description" content="Forgotten public Angular repos with a hardcoded dev token that still worked two years later.">
+  <meta property="og:url" content="https://szyth.github.io/writeups/github-recon-api-access/">
+  <meta property="article:published_time" content="2023-01-17">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<main class="page">
+  <nav class="topbar" aria-label="Site">
+    <a href="/">← Zia · Rust engineer</a>
+    <a href="/#work">All writeups</a>
+  </nav>
+  <article class="card article">
+    <header>
+      <span class="kind writeup">Writeup · from my security research days</span>
+      <h1>How GitHub recon got me authenticated API access</h1>
+      <div class="meta"><time datetime="2023-01-17">Jan 17, 2023</time><span>2 min read</span><span>#pentest</span><span>#recon</span><span>#api</span></div>
+    </header>
+    <div class="prose">
+<p>I had just finished a web app pentest of one of a client's assets.</p>
+<p>It was a black-box engagement with only the in-scope URLs provided: one subdomain and its API endpoints. To respect the NDA, I'll call them <code>dashboard.target.com</code> and <code>api.target.com/v2</code>.</p>
+<p>With the scope fixed to a single subdomain, there wasn't much to do in subdomain recon.</p>
+
+<h2>GitHub recon</h2>
+<p>So I turned to GitHub, hoping to find the client's repositories or other useful information.</p>
+<p>I tried several search filters and keywords related to <code>dashboard.target.com</code> and <code>api.target.com</code>, but all their repositories were private, so nothing came back.</p>
+<p>I broadened the search to public repositories with the same name as the client, and found around 10.</p>
+<p>All of them were unfinished, hadn't been touched in a year, and were built with Angular.</p>
+<p>Having worked with Angular, I knew environment variables, API endpoints and tokens typically live in <code>environment.*.ts</code>, <code>*.service.ts</code> and <code>*.interceptor.service.ts</code> files.</p>
+<p>Two of these repos had a hardcoded API domain and token, though the domain was the <strong>development</strong> one: <code>api.dev.target.com</code>.</p>
+<figure>
+  <img src="/assets/writeups/image-12.png" alt="environment.ts in a public repo with a hardcoded dev API URL (redacted)" width="1146" height="584" loading="lazy">
+  <figcaption>environment.ts with the dev API URL</figcaption>
+</figure>
+<figure>
+  <img src="/assets/writeups/image-15.png" alt="An Angular HTTP interceptor with a hardcoded Bearer token (blurred)" width="1165" height="618" loading="lazy">
+  <figcaption>An HTTP interceptor with a hardcoded bearer token</figcaption>
+</figure>
+<p>That gave me:</p>
+<ul>
+  <li>The dev API domain</li>
+  <li>An access token</li>
+  <li>API endpoints, extracted from several <code>service.ts</code> files</li>
+</ul>
+
+<h2>Does the token still work?</h2>
+<p>The commits were from 2021, so I expected the token to have expired. I gave it a shot anyway, hit the dev endpoint and, bingo: the API returned data with a 200.</p>
+<figure>
+  <img src="/assets/writeups/image-9.png" alt="Postman request to the dev API with the leaked token returning 200 OK with a client ID and secret (redacted)" width="923" height="573" loading="lazy">
+  <figcaption>The 2021 token still worked on the dev API</figcaption>
+</figure>
+<p>The same token didn't work on the production <code>api.target.com</code>. So the developers had hardcoded the values for development and unknowingly pushed the code to public repositories.</p>
+
+<h2>Reporting</h2>
+<p>Because the finding was on <code>api.dev.target.com</code>, which was out of scope, it couldn't go in the pentest report. I reported it responsibly by email instead.</p>
+<p>They revoked the token immediately.</p>
+<figure>
+  <img src="/assets/writeups/image-10.png" alt="API response: 401, Your Session has expired, Please login again" width="474" height="175" loading="lazy">
+  <figcaption>Rest in pieces, the token :)</figcaption>
+</figure>
+    </div>
+    <nav class="end" aria-label="More">
+      <a href="/">← Back to all work</a>
+      <a href="/writeups/aws-cognito-privilege-escalation/">Next: Super Admin privilege escalation from a misconfigured AWS Cognito →</a>
+    </nav>
+  </article>
+  <footer>© 2026 Zia</footer>
+</main>
+</body>
+</html>

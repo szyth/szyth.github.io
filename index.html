@@ -1,7 +1,145 @@
----
-# You don't need to edit this file, it's empty on purpose.
-# Edit theme's home layout instead if you wanna make some changes
-# See: https://jekyllrb.com/docs/themes/#overriding-theme-defaults
-layout: home
-author_profile: true
----
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zia · Rust engineer</title>
+  <meta name="description" content="Zia is a Rust engineer working on systems, networking and backend services. Previously a security researcher.">
+  <meta name="theme-color" content="#f7f3ec">
+  <link rel="canonical" href="https://szyth.github.io/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Zia · Rust engineer">
+  <meta property="og:description" content="Rust engineer working on systems, networking and backend services. Previously a security researcher.">
+  <meta property="og:url" content="https://szyth.github.io/">
+  <meta property="og:image" content="https://szyth.github.io/assets/avatar.jpg">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<a class="skip" href="#work">Skip to projects</a>
+<main class="page">
+
+  <!-- ===== Info card ===== -->
+  <section class="card me" aria-labelledby="name">
+    <img src="/assets/avatar.jpg" alt="Zia" width="96" height="96">
+    <p class="role">Zia · Rust engineer</p>
+    <h1 id="name">Zia writes <em>Rust</em>, mostly close to the metal.</h1>
+    <p class="bio">I write Rust full time: networking, async runtimes, memory layout, and backend services that stay up. Before Rust I was a security researcher, so I review code like an attacker would.</p>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/szyth" rel="me">GitHub</a>
+      <a class="btn" href="https://www.linkedin.com/in/sayyedzia" rel="me">LinkedIn</a>
+    </div>
+  </section>
+
+  <!-- ===== Filters ===== -->
+  <div class="bar" id="work">
+    <div class="tabs" role="group" aria-label="Filter">
+      <button type="button" aria-pressed="true" data-f="all">All</button>
+      <button type="button" aria-pressed="false" data-f="project">Projects</button>
+      <button type="button" aria-pressed="false" data-f="writeup">Writeups</button>
+    </div>
+    <span class="count" aria-live="polite"></span>
+  </div>
+
+  <div class="grid">
+    <!--
+      PROJECT CARD: copy this block, change the number, caption, title, summary and topic.
+      <a class="card item" href="https://github.com/szyth/REPO" data-kind="project">
+        <div class="cover"><b>03</b><span>short · caption</span></div>
+        <span class="kind project">Project</span>
+        <h2>Title</h2>
+        <p>One-line summary.</p>
+        <div class="meta"><span>topic</span></div>
+      </a>
+
+      WRITEUP CARD: copy any writeups/*/index.html to writeups/SLUG/index.html, edit it, and link it here.
+      <a class="card item" href="/writeups/SLUG/" data-kind="writeup">
+        <div class="cover"><b>¶</b><span>6 min read</span></div>
+        <span class="kind writeup">Writeup · Dec 2026</span>
+        <h2>Title</h2>
+        <p>One-line summary.</p>
+      </a>
+    -->
+
+    <a class="card item" href="https://github.com/szyth/rust-stackless-coroutine" data-kind="project">
+      <div class="cover"><b>01</b><span>Future · PollState · mio</span></div>
+      <span class="kind project">Project</span>
+      <h2>Stackless coroutines</h2>
+      <p>A hand-written Future trait and state machine, polled to completion with mio.</p>
+      <div class="meta"><span>async</span></div>
+    </a>
+
+    <a class="card item" href="https://github.com/szyth/rust-internals" data-kind="project">
+      <div class="cover"><b>02</b><span>Cell · Rc/Weak · Cow · repr</span></div>
+      <span class="kind project">Project</span>
+      <h2>Rust internals</h2>
+      <p>Small exercises on Rust's internals: Cell, Rc/Weak, Cow, repr layouts, lifetimes.</p>
+      <div class="meta"><span>learning</span></div>
+    </a>
+
+    <a class="card item" href="/writeups/33000-users-data-leak/" data-kind="writeup">
+      <div class="cover"><b>¶</b><span>3 min read</span></div>
+      <span class="kind writeup">Writeup · Feb 2023</span>
+      <h2>How I found 33,000+ users' data and government documents leaking</h2>
+      <p>An IDOR in a hidden API, a Rust PoC to prove it, and a response swap that exposed government ID documents.</p>
+    </a>
+
+    <a class="card item" href="/writeups/github-recon-api-access/" data-kind="writeup">
+      <div class="cover"><b>¶</b><span>2 min read</span></div>
+      <span class="kind writeup">Writeup · Jan 2023</span>
+      <h2>How GitHub recon got me authenticated API access</h2>
+      <p>Forgotten public Angular repos with a hardcoded dev token that still worked two years later.</p>
+    </a>
+
+    <a class="card item" href="/writeups/aws-cognito-privilege-escalation/" data-kind="writeup">
+      <div class="cover"><b>¶</b><span>3 min read</span></div>
+      <span class="kind writeup">Writeup · May 2022</span>
+      <h2>Super Admin privilege escalation from a misconfigured AWS Cognito</h2>
+      <p>Rewriting one custom user attribute with awscli was enough to become any user, including the Super Admin.</p>
+    </a>
+
+    <a class="card item" href="/writeups/unauthenticated-api-data-leak/" data-kind="writeup">
+      <div class="cover"><b>¶</b><span>2 min read</span></div>
+      <span class="kind writeup">Writeup · May 2022</span>
+      <h2>An unauthenticated API leaking every user on the platform</h2>
+      <p>Six APIs that returned full user records with no Authorization header at all.</p>
+    </a>
+
+    <p class="card empty" hidden>Nothing here yet.</p>
+  </div>
+
+  <footer>© <span id="year">2026</span> Zia</footer>
+</main>
+
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.tabs button');
+  var items = document.querySelectorAll('.item');
+  var count = document.querySelector('.count');
+  var empty = document.querySelector('.empty');
+  function apply(f) {
+    var shown = 0;
+    items.forEach(function (c) {
+      var hide = f !== 'all' && c.dataset.kind !== f;
+      c.hidden = hide;
+      if (!hide) shown++;
+    });
+    empty.hidden = shown > 0;
+    count.textContent = shown + (shown === 1 ? ' item' : ' items');
+  }
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      buttons.forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      apply(b.dataset.f);
+    });
+  });
+  apply('all');
+  document.getElementById('year').textContent = new Date().getFullYear();
+})();
+</script>
+</body>
+</html>
