@@ -1,6 +1,6 @@
 # szyth.github.io
 
-Personal site of Zia, Rust engineer. Plain HTML and CSS, no build step.
+Personal site of Zia, lead Rust engineer. Plain HTML and CSS, no build step.
 GitHub Pages serves the files as they are (`.nojekyll` turns off its Jekyll build).
 
 Preview locally:
